@@ -134,26 +134,34 @@ function applyDesign(d){
  const logo=safeLink(d.logo_image_url);$('storeLogoImage').classList.toggle('hidden',!logo);if(logo)$('storeLogoImage').src=logo;else $('storeLogoImage').removeAttribute('src');
  const hero=safeLink(d.hero_image_url);if(hero){document.querySelector('.hero').style.setProperty('--hero-user','url("'+hero.replaceAll('"','%22')+'")')}else{document.querySelector('.hero').style.removeProperty('--hero-user')}
 }
-async function readDesignRow(){
- if(!online)throw Error('Sin conexión con Supabase');
+// REST read with explicit timeout: never leave the storefront on stale defaults.
+let designLoadGeneration=0;
+async function designRequest(method,body,token){
+ const controller=new AbortController();
+ const timeout=setTimeout(()=>controller.abort(),12000);
  try{
-  const {data,error}=await db.from('site_settings').select('*').eq('id',1).maybeSingle();
-  if(error)throw error;
-  return data;
- }catch(firstError){
-  // Read-only fallback to distinguish a lost client response from a database failure.
-  const url=config.supabaseUrl+'/rest/v1/site_settings?id=eq.1&select=*&refresh='+Date.now();
-  try{
-   const response=await fetch(url,{method:'GET',cache:'no-store',headers:{'apikey':config.supabaseAnonKey,'Accept':'application/json'}});
-   if(!response.ok)throw Error('HTTP '+response.status);
-   const rows=await response.json();return Array.isArray(rows)?rows[0]||null:null;
-  }catch(secondError){console.warn('TABNALL: fallo al consultar diseño',firstError,secondError);throw secondError}
- }
+  const response=await fetch(config.supabaseUrl+'/rest/v1/site_settings?id=eq.1&select=*',{
+   method,cache:'no-store',signal:controller.signal,
+   headers:{'apikey':config.supabaseAnonKey,'Authorization':'Bearer '+(token||config.supabaseAnonKey),'Accept':'application/json','Content-Type':'application/json','Prefer':'return=representation'},
+   ...(body===undefined?{}:{body:JSON.stringify(body)})
+  });
+  const raw=await response.text();
+  let data=null;try{data=raw?JSON.parse(raw):null}catch{}
+  if(!response.ok)throw Error('Supabase HTTP '+response.status+': '+(data?.message||data?.error||raw.slice(0,180)||'respuesta no válida'));
+  return Array.isArray(data)?data[0]||null:data;
+ }catch(e){if(e.name==='AbortError')throw Error('Supabase no respondió en 12 segundos');throw e}
+ finally{clearTimeout(timeout)}
 }
+async function readDesignRow(){if(!online)throw Error('Sin conexión con Supabase');return await designRequest('GET')}
 async function loadStoreSettings(){
  if(!online)return false;
- try{const row=await readDesignRow();if(!row)return false;currentDesign={...DESIGN_DEFAULTS,...row};applyDesign(currentDesign);return true}
- catch(error){console.warn('TABNALL: diseño no actualizado, se conserva el último diseño visible',error);return false}
+ const generation=++designLoadGeneration;
+ try{
+  const row=await readDesignRow();
+  if(!row||generation!==designLoadGeneration)return false;
+  currentDesign={...DESIGN_DEFAULTS,...row};applyDesign(currentDesign);
+  return true;
+ }catch(error){console.warn('TABNALL: error al cargar diseño',error);return false}
 }
 const designFields={sName:'store_name',sSubtitle:'subtitle',sHeading:'hero_heading',sDescription:'hero_description',sBackground:'background_color',sSurface:'surface_color',sText:'text_color',sAccent:'accent_color',sHeroUrl:'hero_image_url',sLogoUrl:'logo_image_url',sInstagram:'instagram_url',sAnnouncement:'announcement',sWhatsapp:'whatsapp_number',sFacebook:'facebook_url',sTiktok:'tiktok_url',sHours:'contact_hours',sDelivery:'delivery_info',sPayment:'payment_info',sCare:'care_info',sAbout:'about_text'};
 function fillDesign(){for(const [id,key] of Object.entries(designFields))$(id).value=currentDesign[key]||''}
@@ -163,36 +171,38 @@ function previewDesign(){let d=draftDesign();if(!validImage(d.hero_image_url)||!
 function cancelDesign(){applyDesign(currentDesign);$('designPanel').classList.add('hidden')}
 async function saveDesign(){
  const status=$('designStatus');
+ const button=status.closest('.designPanel')?.querySelector('button.primary');
  if(!online||!authorized){status.textContent='Debes iniciar sesión como administrador.';return}
- let d=draftDesign();
+ const d=draftDesign();
  if(!d.store_name){status.textContent='El nombre de la tienda no puede estar vacío.';return}
  if(!validImage(d.hero_image_url)||!validImage(d.logo_image_url)){status.textContent='Las imágenes deben usar enlaces HTTPS.';return}
- if(d.instagram_url&&!safeLink(d.instagram_url)){status.textContent='Introduce un enlace HTTPS de Instagram.';return}
  if(!normalWhatsApp(d.whatsapp_number)){status.textContent='Escribe un número válido de WhatsApp (mínimo 10 dígitos).';return}
  for(const [key,site] of [['instagram_url','instagram'],['facebook_url','facebook'],['tiktok_url','tiktok']]){
-  if(d[key]&&!socialUrl(d[key],site)){status.textContent='Revisa el enlace de '+site+'. Debe pertenecer a su página oficial (https://).';return}
+  if(d[key]&&!socialUrl(d[key],site)){status.textContent='Revisa el enlace HTTPS de '+site+'.';return}
  }
  d.whatsapp_number=normalWhatsApp(d.whatsapp_number);
  const values=Object.fromEntries(Object.values(designFields).map(k=>[k,d[k]]));
- const button=status.parentElement.querySelector('button.primary');
  if(button)button.disabled=true;
  status.textContent='Guardando cambios en Supabase…';
- let writeError=null, saved=null;
  try{
-  const {data,error}=await Promise.race([db.from('site_settings').update({...values,updated_at:new Date().toISOString()}).eq('id',1).select().single(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('La conexión tardó más de 15 segundos. Comprueba tu conexión y vuelve a intentarlo.')),15000))]);
-  if(error)throw error;
-  saved=data;
- }catch(e){writeError=e;console.warn('TABNALL: no se recibió la confirmación del guardado',e)}
- // Verify the persisted state whether or not the browser received the PATCH response.
- if(!saved){try{saved=await Promise.race([readDesignRow(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tiempo de espera agotado')),10000))])}catch(e){console.warn('TABNALL: no se pudo verificar el guardado',e)}}
- const persisted=saved&&Object.entries(values).every(([key,value])=>String(saved[key]??'')===String(value??''));
- if(persisted){
-  currentDesign={...DESIGN_DEFAULTS,...saved};applyDesign(currentDesign);
-  status.textContent='✓ Cambios guardados y comprobados en Supabase. Otros visitantes los verán al abrir o actualizar la tienda.';
- }else{
-  status.textContent=writeError?'No se pudo confirmar el guardado: '+(writeError.message||'error de conexión')+'. Tus datos siguen en el formulario.':'El servidor no confirmó los cambios. Comprueba que tu sesión siga abierta y vuelve a intentarlo.';
- }
- if(button)button.disabled=false;
+  const sessionResult=await Promise.race([
+   db.auth.getSession(),
+   new Promise((_,reject)=>setTimeout(()=>reject(Error('La sesión tardó demasiado en responder.')),8000))
+  ]);
+  const token=sessionResult.data?.session?.access_token;
+  if(sessionResult.error||!token)throw Error('Sesión vencida. Cierra sesión y vuelve a entrar.');
+  const saved=await designRequest('PATCH',{...values,updated_at:new Date().toISOString()},token);
+  if(!saved)throw Error('Supabase no devolvió el registro actualizado. Comprueba los permisos de administrador.');
+  const mismatch=Object.keys(values).filter(key=>String(saved[key]??'')!==String(values[key]??''));
+  if(mismatch.length)throw Error('Supabase devolvió valores distintos: '+mismatch.join(', '));
+  ++designLoadGeneration;
+  currentDesign={...DESIGN_DEFAULTS,...saved};
+  applyDesign(currentDesign);
+  status.textContent='✓ Guardado confirmado. El logo, la portada, WhatsApp y las redes ya están actualizados.';
+ }catch(error){
+  console.error('TABNALL: error al guardar diseño',error);
+  status.textContent='No se pudo confirmar el guardado: '+(error.message||'Error desconocido')+'. Conservamos tus datos en el formulario.';
+ }finally{if(button)button.disabled=false}
 }
 async function uploadMedia(file){if(!online||!authorized)throw Error('Inicia sesión como administrador.');if(!file)throw Error('Selecciona una foto.');if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type))throw Error('Usa JPG, PNG, WEBP o GIF.');if(file.size>5*1024*1024)throw Error('La foto debe pesar menos de 5 MB.');const ext={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif'}[file.type];const id=crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.floor(Math.random()*1e9);const path='tabnall/'+id+'.'+ext;const {error}=await db.storage.from('tabnall-media').upload(path,file,{contentType:file.type,cacheControl:'3600',upsert:false});if(error)throw Error(error.message);return db.storage.from('tabnall-media').getPublicUrl(path).data.publicUrl}
 async function uploadDesignImage(kind,input){const label=$('designStatus');label.textContent='Subiendo imagen...';try{const url=await uploadMedia(input.files?.[0]);$(kind==='hero'?'sHeroUrl':'sLogoUrl').value=url;label.textContent='✓ Foto subida. Ahora pulsa «Guardar diseño para todos».'}catch(e){label.textContent='No se pudo subir: '+e.message}finally{input.value=''}}
