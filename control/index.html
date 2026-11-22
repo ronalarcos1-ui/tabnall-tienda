@@ -121,10 +121,11 @@ function save(){
   const before=beforeRaw?JSON.parse(beforeRaw):blank();
   appendAudit(before);
   localStorage.setItem(KEY,JSON.stringify(state));
-  localVersion++;cloudDirty=true;render();
-  if(cloudReady)void uploadCloud();else if(cloudUser)cloudStatus('Cambios guardados solo en este dispositivo. Sube los datos para activar la nube.');
-  return true
- }catch(e){alert('No se pudieron guardar los datos. Descarga un respaldo.');return false}
+ }catch(e){console.error('Error de almacenamiento local',e);alert('No se pudieron guardar los datos en este dispositivo: '+e.message+'. Descarga un respaldo JSON.');return false}
+ localVersion++;cloudDirty=true;
+ try{render()}catch(e){console.error('Error al actualizar pantalla',e);alert('El movimiento se guardó localmente, pero ocurrió un error al actualizar la pantalla: '+e.message+'. No repitas la operación. Recarga la aplicación y verifica el historial.')}
+ if(cloudReady)void uploadCloud();else if(cloudUser)cloudStatus('Cambios guardados solo en este dispositivo. Sube los datos para activar la nube.');
+ return true
 }
 function tr(body,values,onDelete){const row=document.createElement('tr');for(const v of values){const td=document.createElement('td');td.textContent=String(v);row.append(td)}if(onDelete){const td=document.createElement('td'),b=document.createElement('button');b.textContent='Eliminar';b.onclick=onDelete;td.append(b);row.append(td)}body.append(row)}
 function totals(s=state.sales,e=state.expenses){const revenue=s.reduce((n,x)=>n+(x.returned?0:x.qty*x.price),0),cost=s.reduce((n,x)=>n+(x.returned?0:x.qty*x.cost),0),spent=e.reduce((n,x)=>n+x.amount,0);return {revenue,cost,spent,profit:revenue-cost-spent}}
@@ -278,7 +279,7 @@ $('saleForm').onsubmit=e=>{
  if(oldSale&&!previousProduct)return alert('El producto original ya no existe');
  const method=$('spayment').value,deposit=Number($('sdeposit').value),clientName=$('sclient').value.trim(),total=qty*price;
  if(method==='Crédito'&&!clientName)return alert('Para una venta a crédito debes indicar el cliente');
- if(!Number.isInteger(deposit)||deposit<0||deposit>total)return alert('El abono debe estar entre cero y el total de la venta');
+ if(method==='Crédito'&&(!Number.isInteger(deposit)||deposit<0||deposit>total))return alert('El abono debe estar entre cero y el total de la venta');
  if(oldSale&&oldSale.payments&&oldSale.payments.length)return alert('Esta venta tiene pagos registrados. Por seguridad no puede editarse directamente; registra una devolución o corrección supervisada.');
  const payments=method==='Crédito'?(deposit?[{id:uid(),date:$('sdate').value,amount:deposit,method:$('sdepositMethod').value}]:[]):[{id:uid(),date:$('sdate').value,amount:total,method}];
  if(oldSale){previousProduct.qty+=oldSale.qty;Object.assign(oldSale,{date:$('sdate').value,productId:p.id,name:p.name,qty,price,cost:p.cost,client:clientName,payments})}
