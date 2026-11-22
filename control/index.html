@@ -242,7 +242,7 @@ function renderClosing(){
  const target=$('closingCards');target.replaceChildren();
  for(const c of [...(state.closings||[])].reverse()){
   const box=document.createElement('article');box.className='sale-card';
-  const title=document.createElement('strong');title.textContent=c.date+' · Diferencia: '+money(c.difference);
+  const title=document.createElement('strong');title.textContent=c.date+' · Diferencia: '+money(c.difference);const current=cashFigures(c.date);if(current.cash!==c.cashIn||current.out!==c.cashOut){const warning=document.createElement('p');warning.className='warning';warning.textContent='⚠️ Se registraron movimientos posteriores al cierre. Requiere conciliación manual.';box.append(warning)}
   const detail=document.createElement('p');detail.textContent='Inicial: '+money(c.opening)+' · Esperado: '+money(c.expected)+' · Contado: '+money(c.counted)+' · Registrado por: '+(c.actor||'Usuario');
   box.append(title,detail);target.append(box)
  }
