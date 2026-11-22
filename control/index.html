@@ -1,6 +1,6 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#111827"><title>TABNALL CONTROL</title><style>
 :root{font-family:system-ui,-apple-system,sans-serif;color:#f6f1e7;background:#111827}*{box-sizing:border-box}body{margin:0}header{background:#182334;padding:18px;position:sticky;top:0;z-index:2;border-bottom:1px solid #3a4554}h1{margin:0;color:#edcb84;font-size:21px}small,.muted{color:#b6c0d0}main{max-width:1100px;margin:auto;padding:15px 15px 70px}.nav{display:flex;overflow:auto;gap:7px;padding:10px 0 20px}.nav button{white-space:nowrap}button,.btn{border:1px solid #92784c;border-radius:9px;padding:12px;background:#2d3645;color:#fff;font:inherit;cursor:pointer}button.active,button.primary{background:#e8c784;color:#171717;font-weight:700}.panel{display:none}.panel.active{display:block}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.card,section.box{background:#1e293b;border:1px solid #354253;border-radius:13px;padding:16px;margin-bottom:13px}.card small{display:block}.card strong{font-size:clamp(18px,4vw,26px);display:block;margin-top:8px;color:#f3d391}h2{font-size:19px;margin:6px 0 15px}.sale-card{background:#131d2c;border:1px solid #536176;border-radius:12px;padding:14px;margin:12px 0}.sale-card strong{color:#edcb84}.sale-card p{margin:7px 0}.sale-actions{display:flex;gap:9px;margin-top:12px}.sale-actions{flex-wrap:wrap}.sale-actions button{flex:1;min-width:110px}[hidden]{display:none!important}.warning{color:#ffd78a}.good{color:#8fe0b4}.tiny{font-size:12px}.sale-actions button{flex:1}.danger{border-color:#d58a8a;color:#ffd1d1}.empty{color:#b6c0d0;padding:12px}label{display:block;margin:12px 0 5px;font-size:14px;color:#e3e5eb}input,select{width:100%;padding:12px;border-radius:8px;border:1px solid #5b6878;background:#101827;color:#fff;font:inherit}input:focus,select:focus{outline:2px solid #edcb84}.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:0 12px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:570px;font-size:14px}td,th{padding:10px;text-align:left;border-bottom:1px solid #3d4858}th{color:#edcb84}td button{padding:6px 9px}#notice{color:#f3d391;min-height:22px}p{line-height:1.5}@media(min-width:750px){.cards{grid-template-columns:repeat(4,1fr)}} </style></head><body>
-<header><h1>✦ TABNALL CONTROL</h1><small>Finanzas e inventario · COP · Acceso privado · Respaldo en la nube</small></header><main><section id="authBox" class="box"><h2>Acceso privado · TABNALL CONTROL 2.0</h2><p class="muted">Inicia sesión con una cuenta de Supabase. Tus datos actuales del iPhone no se borrarán.</p><form id="authForm"><label>Correo electrónico</label><input id="authEmail" type="email" autocomplete="username" required><label>Contraseña</label><input id="authPassword" type="password" autocomplete="current-password" required><div class="actions"><button class="primary">Iniciar sesión</button><button type="button" id="resetPassword">Recuperar contraseña</button></div></form><p class="muted">Si todavía no tienes usuario autorizado, solicítalo al administrador de Supabase. No se permite registro público desde esta aplicación.</p><p id="authMessage" role="status"></p></section><div id="privateApp" hidden><section class="box"><div class="actions"><strong id="accountLabel">Sesión privada</strong><button type="button" id="logout">Cerrar sesión</button></div><p id="cloudStatus" role="status">Conectando a la nube…</p><div class="actions"><button type="button" id="cloudUpload">Subir mis datos actuales a Supabase</button><button type="button" id="cloudDownload">Recuperar datos de Supabase</button></div><p class="muted">Antes de importar datos, descarga una copia JSON en Reportes y respaldo. Los cambios de otro dispositivo se detectan para evitar sobrescribirlos. Mantén un respaldo JSON.</p></section><section class="box"><h2>Entorno de trabajo</h2><p id="modeLabel" class="good">● Modo real</p><p class="muted">El modo de pruebas utiliza datos separados y nunca los envía a Supabase.</p><button type="button" id="toggleMode">Activar modo de pruebas</button></section><nav class="nav"><button data-tab="home" class="active">Resumen</button><button data-tab="sales">Ventas</button><button data-tab="expenses">Gastos</button><button data-tab="stock">Inventario</button><button data-tab="cash">Caja y cobros</button><button data-tab="closing">Cierre de caja</button><button data-tab="audit">Historial</button><button data-tab="reports">Reportes y respaldo</button></nav><div id="notice" role="status"></div>
+<header><h1>✦ TABNALL CONTROL</h1><small>Finanzas e inventario · COP · Acceso privado · Respaldo en la nube</small></header><main><section id="authBox" class="box"><h2>Acceso privado · TABNALL CONTROL 2.0</h2><p class="muted">Inicia sesión con una cuenta de Supabase. Tus datos actuales del iPhone no se borrarán.</p><form id="authForm"><label>Correo electrónico</label><input id="authEmail" type="email" autocomplete="username" required><label>Contraseña</label><input id="authPassword" type="password" autocomplete="current-password" required><div class="actions"><button class="primary">Iniciar sesión</button><button type="button" id="resetPassword">Recuperar contraseña</button></div></form><p class="muted">Si todavía no tienes usuario autorizado, solicítalo al administrador de Supabase. No se permite registro público desde esta aplicación.</p><p id="authMessage" role="status"></p></section><div id="privateApp" hidden><section class="box"><div class="actions"><strong id="accountLabel">Sesión privada</strong><button type="button" id="logout">Cerrar sesión</button></div><p id="cloudStatus" role="status">Conectando a la nube…</p><div class="actions"><button type="button" id="cloudUpload">Subir mis datos actuales a Supabase</button><button type="button" id="cloudDownload">Recuperar datos de Supabase</button><button type="button" id="retryCloud">Reintentar sincronización</button><button type="button" id="showVersions">Ver respaldos anteriores</button></div><div id="versionCards"></div><p class="muted">Antes de importar datos, descarga una copia JSON en Reportes y respaldo. Los cambios de otro dispositivo se detectan para evitar sobrescribirlos. Mantén un respaldo JSON.</p></section><section class="box"><h2>Entorno de trabajo</h2><p id="modeLabel" class="good">● Modo real</p><p class="muted">El modo de pruebas utiliza datos separados y nunca los envía a Supabase.</p><button type="button" id="toggleMode">Activar modo de pruebas</button></section><nav class="nav"><button data-tab="home" class="active">Resumen</button><button data-tab="sales">Ventas</button><button data-tab="expenses">Gastos</button><button data-tab="stock">Inventario</button><button data-tab="cash">Caja y cobros</button><button data-tab="closing">Cierre de caja</button><button data-tab="audit">Historial</button><button data-tab="reports">Reportes y respaldo</button></nav><div id="notice" role="status"></div>
 <div id="home" class="panel active"><div class="cards"><div class="card"><small>Ventas</small><strong id="rev">$0</strong></div><div class="card"><small>Costo vendido</small><strong id="cost">$0</strong></div><div class="card"><small>Gastos</small><strong id="spent">$0</strong></div><div class="card"><small>Ganancia estimada</small><strong id="profit">$0</strong></div></div><section class="box"><h2>Tu negocio de un vistazo</h2><p id="overview"></p><p class="muted">Ganancia = ventas − costo de productos vendidos − gastos registrados. Evita registrar la misma compra de mercancía como gasto y costo de venta a la vez.</p></section></div>
 <div id="stock" class="panel"><section class="box"><h2>Alertas de inventario</h2><label>Alertar cuando queden estas unidades o menos</label><input id="lowStockThreshold" type="number" min="0" step="1" value="3"><div id="lowStockAlerts"></div></section><section class="box"><h2 id="productFormTitle">Agregar producto</h2><form id="productForm"><div class="fields"><div><label>Nombre</label><input id="pname" required maxlength="100"></div><div><label>Costo unitario (COP)</label><input id="pcost" type="number" min="0" step="1" required></div><div><label>Precio de venta (COP)</label><input id="pprice" type="number" min="0" step="1" required></div><div><label>Unidades disponibles</label><input id="pqty" type="number" min="0" step="1" required></div></div><div class="actions"><button class="primary" id="saveProductButton">Guardar producto</button><button type="button" id="cancelProductEdit" hidden>Cancelar edición</button></div></form></section><section class="box"><h2>Inventario</h2><p class="muted">Pulsa Editar precio debajo de cada producto para modificar su costo, precio o existencias.</p><div id="productCards"></div><div class="scroll" style="display:none"><table><thead><tr><th>Producto</th><th>Costo</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr></thead><tbody id="productsRows"></tbody></table></div></section></div>
 <div id="sales" class="panel"><section class="box"><h2>Registrar venta</h2><form id="saleForm"><div class="fields"><div><label>Fecha</label><input id="sdate" type="date" required></div><div><label>Producto</label><select id="sproduct" required></select></div><div><label>Cantidad</label><input id="sqty" type="number" min="1" step="1" required></div><div><label>Precio unitario de venta</label><input id="sprice" type="number" min="0" step="1" required></div><div><label>Cliente (obligatorio para crédito)</label><input id="sclient" maxlength="100"></div><div><label>Método de pago</label><select id="spayment"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Tarjeta">Tarjeta</option><option value="Otro">Otro</option><option value="Crédito">Crédito / abono</option></select></div><div><label>Abono inicial recibido (solo crédito)</label><input id="sdeposit" type="number" min="0" step="1" value="0"></div><div><label>Medio del abono inicial</label><select id="sdepositMethod"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otro</option></select></div></div><div class="actions"><button class="primary" id="saveSaleButton">Registrar venta</button><button type="button" id="cancelSaleEdit" hidden>Cancelar edición</button></div></form></section><section class="box"><h2>Historial de ventas</h2><p class="muted">Usa Editar o Eliminar debajo de cada venta.</p><div id="salesCards"></div><div class="scroll" style="display:none"><table><thead><tr><th>Fecha</th><th>Producto</th><th>Unidades</th><th>Ingreso</th><th>Ganancia bruta</th><th>Acción</th></tr></thead><tbody id="salesRows"></tbody></table></div></section></div>
@@ -13,14 +13,14 @@ let testMode=false;let state=blank();try{const raw=localStorage.getItem(KEY);if(
 const SUPABASE_URL='https://gzunmqxvalyiciedcxdp.supabase.co';
 const SUPABASE_KEY='sb_publishable_JFPyXZ_P7vrZxl6kA0y07A_92h5C4ph';
 const client=window.supabase?.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-let cloudUser=null,cloudReady=false,cloudBusy=Promise.resolve(),cloudDirty=false,cloudRevision=null,localVersion=0;
+let cloudUser=null,cloudReady=false,cloudBusy=Promise.resolve(),cloudDirty=false,cloudRevision=null,localVersion=0,syncPending=false;
 const hasRecords=x=>x.products.length+x.sales.length+x.expenses.length>0;
 const validData=x=>x&&Array.isArray(x.products)&&Array.isArray(x.sales)&&Array.isArray(x.expenses);
 function cloudStatus(msg){$('cloudStatus').textContent=msg}
 function showLogin(msg=''){cloudUser=null;cloudReady=false;cloudRevision=null;$('authBox').hidden=false;$('privateApp').hidden=true;$('authMessage').textContent=msg}
 function showApp(user){cloudUser=user;$('authBox').hidden=true;$('privateApp').hidden=false;$('accountLabel').textContent='Cuenta: '+user.email}
 async function fetchCloud(){const {data,error}=await client.from('tabnall_control_data').select('payload,revision').eq('user_id',cloudUser.id).maybeSingle();if(error)throw error;return data||null}
-function conflictWarning(){cloudReady=false;cloudDirty=true;cloudStatus('⚠️ Hay cambios en otro dispositivo. No se sobrescribió la nube. Descarga un respaldo JSON antes de recuperar o subir datos.')}
+function conflictWarning(){cloudReady=false;cloudDirty=true;syncPending=true;cloudStatus('⚠️ Hay cambios en otro dispositivo. No se sobrescribió la nube. Descarga un respaldo JSON antes de recuperar o subir datos.')}
 async function uploadCloud(){
  if(testMode||!cloudUser||!cloudReady)return;
  const snapshot=JSON.parse(JSON.stringify(state)),userId=cloudUser.id,version=localVersion;
@@ -38,9 +38,10 @@ async function uploadCloud(){
     if(!data)return conflictWarning();
     cloudRevision=data.revision;
    }
-   cloudDirty=version!==localVersion;
+   cloudDirty=version!==localVersion;syncPending=cloudDirty;
+   if(cloudDirty&&cloudReady)queueMicrotask(()=>void uploadCloud());
    cloudStatus(cloudDirty?'Hay cambios pendientes. Sincronizando…':'Guardado en Supabase · '+new Date().toLocaleTimeString('es-CO'));
-  }catch(err){cloudDirty=true;cloudStatus('Error al sincronizar: '+err.message+' · Conserva tu respaldo JSON')}
+  }catch(err){cloudDirty=true;syncPending=true;cloudStatus('Error al sincronizar: '+err.message+' · Conserva tu respaldo JSON')}
  };
  cloudBusy=cloudBusy.then(job,job);await cloudBusy
 }
@@ -54,7 +55,7 @@ async function startCloud(user){
    if(hasRecords(state)&&JSON.stringify(state)!==JSON.stringify(remote.payload)){
     if(!confirm('Hay datos locales diferentes de la nube. ¿Cargar los datos de Supabase? Si cancelas, tus datos locales se conservarán y la sincronización quedará pausada.')){cloudStatus('Datos locales conservados. Descarga respaldo JSON antes de elegir qué copia usar.');return}
    }
-   state=remote.payload;localStorage.setItem(KEY,JSON.stringify(state));render();cloudRevision=remote.revision;cloudReady=true;cloudDirty=false;cloudStatus('Datos recuperados de Supabase. Sincronización protegida activa')
+   state=remote.payload;localStorage.setItem(KEY,JSON.stringify(state));render();cloudRevision=remote.revision;cloudReady=true;cloudDirty=false;syncPending=false;cloudStatus('Datos recuperados de Supabase. Sincronización protegida activa')
   }else{
    cloudRevision=null;cloudStatus('No hay datos en la nube. Conservamos tus registros locales. Descarga respaldo JSON y pulsa «Subir mis datos actuales» para iniciar la sincronización.')
   }
@@ -91,8 +92,55 @@ $('cloudDownload').onclick=async()=>{
  if(!confirm('¿Reemplazar los datos locales con los de Supabase? Descarga primero un respaldo JSON.'))return;
  try{
   await cloudBusy;const remote=await fetchCloud();if(!remote||!validData(remote.payload))return alert('No existe un respaldo válido en la nube');
-  state=remote.payload;localStorage.setItem(KEY,JSON.stringify(state));render();cloudRevision=remote.revision;cloudReady=true;cloudDirty=false;cloudStatus('Datos restaurados desde Supabase. Sincronización protegida activa')
+  state=remote.payload;localStorage.setItem(KEY,JSON.stringify(state));render();cloudRevision=remote.revision;cloudReady=true;cloudDirty=false;syncPending=false;cloudStatus('Datos restaurados desde Supabase. Sincronización protegida activa')
  }catch(err){alert('Error: '+err.message)}
+};
+$('retryCloud').onclick=async()=>{
+ if(testMode)return alert('Vuelve al modo real para sincronizar.');
+ if(!cloudUser)return alert('Inicia sesión primero.');
+ try{
+  await cloudBusy;
+  const remote=await fetchCloud();
+  if(remote&&cloudRevision!==remote.revision){conflictWarning();return}
+  if(!remote&&cloudRevision!==null){conflictWarning();return}
+  if(!syncPending&&!cloudDirty){cloudStatus('No hay cambios locales pendientes. La nube está al día.');return}
+  cloudReady=true;await uploadCloud()
+ }catch(e){cloudStatus('No se pudo reintentar: '+e.message)}
+};
+window.addEventListener('online',()=>{if(!testMode&&cloudUser&&cloudReady&&(syncPending||cloudDirty))void uploadCloud()});
+$('showVersions').onclick=async()=>{
+ const target=$('versionCards');target.replaceChildren();
+ if(testMode)return alert('Los respaldos históricos solo están disponibles en modo real.');
+ if(!cloudUser)return alert('Inicia sesión primero.');
+ try{
+  const {data,error}=await client.from('tabnall_control_versions').select('id,revision,created_at').eq('user_id',cloudUser.id).order('revision',{ascending:false}).limit(30);
+  if(error)throw error;
+  if(!data?.length){target.textContent='Todavía no hay versiones históricas.';return}
+  for(const v of data){
+   const card=document.createElement('article');card.className='sale-card';
+   const title=document.createElement('strong');title.textContent='Versión '+v.revision+' · '+new Date(v.created_at).toLocaleString('es-CO');
+   const actions=document.createElement('div');actions.className='sale-actions';
+   const exportButton=document.createElement('button');exportButton.textContent='Descargar JSON';exportButton.onclick=async()=>{
+    const {data:rows,error:err}=await client.from('tabnall_control_versions').select('payload').eq('id',v.id).eq('user_id',cloudUser.id).single();
+    if(err)return alert('Error: '+err.message);
+    download('TABNALL_CONTROL_version_'+v.revision+'.json',JSON.stringify(rows.payload,null,2),'application/json')
+   };
+   const restore=document.createElement('button');restore.textContent='Restaurar versión';restore.onclick=async()=>{
+    if(!confirm('¿Restaurar esta versión antigua? Se creará una nueva versión en la nube y se reemplazarán los datos actuales. Descarga antes un respaldo JSON.'))return;
+    try{
+     await cloudBusy;
+     const current=await fetchCloud();
+     if(!current||current.revision!==cloudRevision)return conflictWarning();
+     const {data:rows,error:err}=await client.from('tabnall_control_versions').select('payload').eq('id',v.id).eq('user_id',cloudUser.id).single();
+     if(err)throw err;if(!validData(rows.payload))throw Error('Respaldo inválido');
+     const {data:updated,error:writeErr}=await client.from('tabnall_control_data').update({payload:rows.payload,revision:cloudRevision+1,updated_at:new Date().toISOString()}).eq('user_id',cloudUser.id).eq('revision',cloudRevision).select('revision').maybeSingle();
+     if(writeErr)throw writeErr;if(!updated)return conflictWarning();
+     cloudRevision=updated.revision;state=rows.payload;localStorage.setItem(KEY,JSON.stringify(state));cloudReady=true;cloudDirty=false;syncPending=false;render();cloudStatus('Versión '+v.revision+' restaurada como nueva revisión '+cloudRevision+'.');
+    }catch(e){cloudStatus('No se pudo restaurar: '+e.message)}
+   };
+   actions.append(exportButton,restore);card.append(title,actions);target.append(card)
+  }
+ }catch(e){cloudStatus('Error al consultar versiones: '+e.message)}
 };
 if(client){client.auth.getUser().then(({data,error})=>{if(data?.user)startCloud(data.user);else showLogin(error?'Vuelve a iniciar sesión.':'')}).catch(()=>showLogin('No fue posible verificar la sesión'))}
 else showLogin('No cargó la biblioteca de Supabase. Comprueba tu conexión.');
@@ -123,7 +171,7 @@ function save(){
   appendAudit(before);
   localStorage.setItem(testMode?TEST_KEY:KEY,JSON.stringify(state));
  }catch(e){console.error('Error de almacenamiento local',e);alert('No se pudieron guardar los datos en este dispositivo: '+e.message+'. Descarga un respaldo JSON.');return false}
- localVersion++;cloudDirty=true;
+ localVersion++;cloudDirty=true;if(!testMode)syncPending=true;
  try{render()}catch(e){console.error('Error al actualizar pantalla',e);alert('El movimiento se guardó localmente, pero ocurrió un error al actualizar la pantalla: '+e.message+'. No repitas la operación. Recarga la aplicación y verifica el historial.')}
  if(!testMode&&cloudReady)void uploadCloud();else if(!testMode&&cloudUser)cloudStatus('Cambios guardados solo en este dispositivo. Sube los datos para activar la nube.');
  return true
