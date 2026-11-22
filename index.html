@@ -179,18 +179,18 @@ async function saveDesign(){
  status.textContent='Guardando cambios en Supabase…';
  let writeError=null, saved=null;
  try{
-  const {data,error}=await db.from('site_settings').update({...values,updated_at:new Date().toISOString()}).eq('id',1).select().single();
+  const {data,error}=await Promise.race([db.from('site_settings').update({...values,updated_at:new Date().toISOString()}).eq('id',1).select().single(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('La conexión tardó más de 15 segundos. Comprueba tu conexión y vuelve a intentarlo.')),15000))]);
   if(error)throw error;
   saved=data;
  }catch(e){writeError=e;console.warn('TABNALL: no se recibió la confirmación del guardado',e)}
  // Verify the persisted state whether or not the browser received the PATCH response.
- if(!saved){try{saved=await readDesignRow()}catch(e){console.warn('TABNALL: no se pudo verificar el guardado',e)}}
+ if(!saved){try{saved=await Promise.race([readDesignRow(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Tiempo de espera agotado')),10000))])}catch(e){console.warn('TABNALL: no se pudo verificar el guardado',e)}}
  const persisted=saved&&Object.entries(values).every(([key,value])=>String(saved[key]??'')===String(value??''));
  if(persisted){
   currentDesign={...DESIGN_DEFAULTS,...saved};applyDesign(currentDesign);
   status.textContent='✓ Cambios guardados y comprobados en Supabase. Otros visitantes los verán al abrir o actualizar la tienda.';
  }else{
-  status.textContent=writeError?'No se pudo confirmar el guardado. Tus datos siguen en el formulario; vuelve a intentarlo más tarde.':'No se pudo confirmar que los cambios estén guardados. No cierres el editor todavía.';
+  status.textContent=writeError?'No se pudo confirmar el guardado: '+(writeError.message||'error de conexión')+'. Tus datos siguen en el formulario.':'El servidor no confirmó los cambios. Comprueba que tu sesión siga abierta y vuelve a intentarlo.';
  }
  if(button)button.disabled=false;
 }
@@ -359,5 +359,7 @@ function validCartItems(){return Object.entries(cart).map(([key,quantity])=>getL
 function renderCart(){const items=validCartItems(),area=$('cartItems');area.replaceChildren();for(const line of items){const {p,variant,quantity,key}=line;const row=document.createElement('div');row.className='cart-line';const info=document.createElement('div');info.className='cart-line-info';const title=document.createElement('p');title.className='cart-line-name';title.textContent=p.name;info.append(title);if(variant){const v=document.createElement('small');v.textContent=[variant.size_label?'Talla: '+variant.size_label:'',variant.color_label?'Color: '+variant.color_label:''].filter(Boolean).join(' · ');info.append(v)}const price=document.createElement('span');price.className='cart-line-price';price.textContent=money(p.price)+' c/u';info.append(price);const controls=document.createElement('div');controls.className='cart-line-controls';const minus=document.createElement('button');minus.textContent='−';minus.onclick=()=>qtyCart(key,-1);const qty=document.createElement('span');qty.textContent=quantity;const plus=document.createElement('button');plus.textContent='+';plus.disabled=quantity>=line.available;plus.onclick=()=>qtyCart(key,1);controls.append(minus,qty,plus);row.append(info,controls);area.append(row)}if(!items.length){const p=document.createElement('p');p.className='empty-muted';p.textContent='Tu carrito está vacío. Agrega artículos disponibles.';area.append(p)}$('cartTotal').textContent=money(items.reduce((sum,i)=>sum+Number(i.p.price)*i.quantity,0));$('cartCheckout').disabled=!items.length;keepCart()}
 async function sendCartWhatsApp(){await refresh();const items=validCartItems();if(!items.length){alert('Los productos seleccionados ya no están disponibles.');renderCart();return}const lines=items.map(({p,variant,quantity})=>'• '+quantity+' × '+p.name+(variant?' ('+[variant.size_label?'Talla '+variant.size_label:'',variant.color_label?'Color '+variant.color_label:''].filter(Boolean).join(', ')+')':'')+' — '+money(Number(p.price)*quantity));const sum=items.reduce((s,x)=>s+Number(x.p.price)*x.quantity,0);const message='Hola '+(currentDesign.store_name||'TABNALL')+', quisiera consultar este pedido:\n\n'+lines.join('\n')+'\n\nTotal estimado: '+money(sum)+'\n¿Me confirmas disponibilidad, entrega y forma de pago?';window.open(whatsappUrl(message),'_blank','noopener')}
 refresh();
+// Reaplicar configuración después de cargar todos los módulos del sitio.
+loadStoreSettings();
 </script>
 </body></html>
