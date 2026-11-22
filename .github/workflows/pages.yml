@@ -26,6 +26,7 @@ jobs:
           mkdir -p _site
           cp -a index.html _site/
           if [ -d assets ]; then cp -a assets _site/; fi
+          if [ -d control ]; then cp -a control _site/; fi
           touch _site/.nojekyll
       - name: Subir sitio
         uses: actions/upload-pages-artifact@v3
