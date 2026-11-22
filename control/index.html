@@ -228,7 +228,7 @@ function monthReport(){
  if(!top.length){target.textContent='Todavía no hay ventas para este mes.';return}
  for(const p of top){const line=document.createElement('p');line.textContent=p.name+' · '+p.qty+' unidades · '+money(p.amount);target.append(line)}
 }
-document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));window.scrollTo(0,0)});
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{const currentY=window.scrollY;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));requestAnimationFrame(()=>window.scrollTo({top:Math.min(currentY,Math.max(0,document.documentElement.scrollHeight-window.innerHeight)),behavior:'instant'}))});
 let editingProductId=null;
 function resetProductEditor(){editingProductId=null;$('productForm').reset();$('productFormTitle').textContent='Agregar producto';$('saveProductButton').textContent='Guardar producto';$('cancelProductEdit').hidden=true}
 $('cancelProductEdit').onclick=resetProductEditor;
