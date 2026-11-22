@@ -290,7 +290,7 @@ function correctClosing(id){
  const reason=closingReason('corregir');if(!reason)return;
  const a=prompt('Efectivo inicial corregido (COP)',String(c.opening));if(a===null)return;
  const b=prompt('Efectivo contado corregido (COP)',String(c.counted));if(b===null)return;
- if(!/^\\d+$/.test(a.trim())||!/^\\d+$/.test(b.trim()))return alert('Escribe importes enteros no negativos');
+ if(!/^[0-9]+$/.test(a.trim())||!/^[0-9]+$/.test(b.trim()))return alert('Escribe importes enteros no negativos');
  const opening=Number(a),counted=Number(b);if(!Number.isSafeInteger(opening)||!Number.isSafeInteger(counted))return alert('Importes fuera de rango');
  if(!confirm('¿Guardar corrección conservando el cierre original?'))return;
  const before={opening:c.opening,counted:c.counted,expected:c.expected,difference:c.difference};
