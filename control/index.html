@@ -14,7 +14,7 @@ const SUPABASE_URL='https://gzunmqxvalyiciedcxdp.supabase.co';
 const SUPABASE_KEY='sb_publishable_JFPyXZ_P7vrZxl6kA0y07A_92h5C4ph';
 const client=window.supabase?.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 let cloudUser=null,cloudReady=false,cloudBusy=Promise.resolve(),cloudDirty=false,cloudRevision=null,localVersion=0,syncPending=false;
-const hasRecords=x=>x.products.length+x.sales.length+x.expenses.length>0;
+const hasRecords=x=>x.products.length+x.sales.length+x.expenses.length+(x.closings?.length||0)>0;
 const validData=x=>x&&Array.isArray(x.products)&&Array.isArray(x.sales)&&Array.isArray(x.expenses);
 function cloudStatus(msg){$('cloudStatus').textContent=msg}
 function showLogin(msg=''){cloudUser=null;cloudReady=false;cloudRevision=null;$('authBox').hidden=false;$('privateApp').hidden=true;$('authMessage').textContent=msg}
@@ -23,9 +23,10 @@ async function fetchCloud(){const {data,error}=await client.from('tabnall_contro
 function conflictWarning(){cloudReady=false;cloudDirty=true;syncPending=true;cloudStatus('⚠️ Hay cambios en otro dispositivo. No se sobrescribió la nube. Descarga un respaldo JSON antes de recuperar o subir datos.')}
 async function uploadCloud(){
  if(testMode||!cloudUser||!cloudReady)return;
- const snapshot=JSON.parse(JSON.stringify(state)),userId=cloudUser.id,version=localVersion;
+ const userId=cloudUser.id;
  const job=async()=>{
   if(testMode||!cloudUser||cloudUser.id!==userId||!cloudReady)return;
+  const snapshot=JSON.parse(JSON.stringify(state)),version=localVersion;
   cloudStatus('Guardando en Supabase…');
   try{
    if(cloudRevision===null){
@@ -107,7 +108,7 @@ $('retryCloud').onclick=async()=>{
   cloudReady=true;await uploadCloud()
  }catch(e){cloudStatus('No se pudo reintentar: '+e.message)}
 };
-window.addEventListener('online',()=>{if(!testMode&&cloudUser&&cloudReady&&(syncPending||cloudDirty))void uploadCloud()});
+window.addEventListener('online',async()=>{if(testMode||!cloudUser||!cloudReady||!(syncPending||cloudDirty))return;try{await cloudBusy;const remote=await fetchCloud();if((remote?.revision??null)!==cloudRevision)return conflictWarning();await uploadCloud()}catch(e){cloudStatus('No se pudo reconectar: '+e.message)}});
 $('showVersions').onclick=async()=>{
  const target=$('versionCards');target.replaceChildren();
  if(testMode)return alert('Los respaldos históricos solo están disponibles en modo real.');
@@ -126,11 +127,12 @@ $('showVersions').onclick=async()=>{
     download('TABNALL_CONTROL_version_'+v.revision+'.json',JSON.stringify(rows.payload,null,2),'application/json')
    };
    const restore=document.createElement('button');restore.textContent='Restaurar versión';restore.onclick=async()=>{
+    if(cloudDirty||syncPending)return alert('Hay cambios pendientes de sincronización. Descarga un respaldo JSON y sincroniza antes de restaurar.');
     if(!confirm('¿Restaurar esta versión antigua? Se creará una nueva versión en la nube y se reemplazarán los datos actuales. Descarga antes un respaldo JSON.'))return;
     try{
      await cloudBusy;
      const current=await fetchCloud();
-     if(!current||current.revision!==cloudRevision)return conflictWarning();
+     if(!current||current.revision!==cloudRevision||cloudDirty||syncPending)return conflictWarning();
      const {data:rows,error:err}=await client.from('tabnall_control_versions').select('payload').eq('id',v.id).eq('user_id',cloudUser.id).single();
      if(err)throw err;if(!validData(rows.payload))throw Error('Respaldo inválido');
      const {data:updated,error:writeErr}=await client.from('tabnall_control_data').update({payload:rows.payload,revision:cloudRevision+1,updated_at:new Date().toISOString()}).eq('user_id',cloudUser.id).eq('revision',cloudRevision).select('revision').maybeSingle();
