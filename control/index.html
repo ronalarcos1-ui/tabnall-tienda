@@ -185,7 +185,7 @@ $('productForm').onsubmit=e=>{
 };
 $('sproduct').onchange=()=>{const p=state.products.find(x=>x.id===$('sproduct').value);if(p)$('sprice').value=p.price};
 let editingSaleId=null;
-function resetSaleEditor(){editingSaleId=null;$('saleForm').reset();function paymentTotal(s){return (s.payments||[]).reduce((a,p)=>a+Number(p.amount||0),0)}
+function paymentTotal(s){return (s.payments||[]).reduce((a,p)=>a+Number(p.amount||0),0)}
 function balance(s){return s.returned?0:Math.max(0,s.qty*s.price-paymentTotal(s))}
 function renderCash(){
  const day=$('cashDate').value||date();
@@ -239,7 +239,7 @@ $('exportAudit').onclick=()=>{
  const esc=v=>'"'+String(v??'').replaceAll('"','""')+'"';
  download('TABNALL_CONTROL_historial_'+date()+'.csv','\uFEFF'+rows.map(r=>r.map(esc).join(',')).join('\r\n'),'text/csv;charset=utf-8')
 };
-$('sdate').value=date();$('saveSaleButton').textContent='Registrar venta';$('cancelSaleEdit').hidden=true}
+function resetSaleEditor(){editingSaleId=null;$('saleForm').reset();$('sdate').value=date();$('saveSaleButton').textContent='Registrar venta';$('cancelSaleEdit').hidden=true}
 $('cancelSaleEdit').onclick=resetSaleEditor;
 function editSale(id){
  const sale=state.sales.find(x=>x.id===id);
