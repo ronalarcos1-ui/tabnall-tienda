@@ -130,7 +130,8 @@ function applyDesign(d){
  $('announcementBar').classList.toggle('hidden',!d.announcement);
  $('promotionHeading').textContent=d.announcement||'Tu próximo accesorio favorito';
  $('promotionDescription').textContent=d.announcement?'Consulta disponibilidad y novedades por WhatsApp.':'Pregunta por modelos disponibles, nuevos diseños y promociones vigentes directamente por WhatsApp.';
- const link=safeLink(d.instagram_url);$('instagramLink').href=link||'#';$('instagramWrap').classList.toggle('hidden',!link);
+ // Instagram is rendered through the existing #social-instagram link by the social-links module.
+ // Do not access removed legacy #instagramLink/#instagramWrap elements.
  const logo=safeLink(d.logo_image_url);$('storeLogoImage').classList.toggle('hidden',!logo);if(logo)$('storeLogoImage').src=logo;else $('storeLogoImage').removeAttribute('src');
  const hero=safeLink(d.hero_image_url);if(hero){document.querySelector('.hero').style.setProperty('--hero-user','url("'+hero.replaceAll('"','%22')+'")')}else{document.querySelector('.hero').style.removeProperty('--hero-user')}
 }
