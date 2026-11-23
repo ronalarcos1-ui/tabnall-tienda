@@ -61,6 +61,15 @@ jobs:
           TABNALL_KEY_ALIAS: ${{ secrets.TABNALL_KEY_ALIAS }}
           TABNALL_KEY_PASSWORD: ${{ secrets.TABNALL_KEY_PASSWORD }}
         run: gradle --no-daemon :app:assembleRelease
+      - name: Verificar APK firmada de producción
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release == true }}
+        run: |
+          set -euo pipefail
+          APK=android-app/app/build/outputs/apk/release/app-release.apk
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | grep "package: name='com.tabnall.control'"
+          sha256sum "$APK" > "$RUNNER_TEMP/tabnall-control.apk.sha256"
       - name: Guardar APK de producción
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.release == true }}
         uses: actions/upload-artifact@v4
@@ -89,4 +98,5 @@ jobs:
             echo "La versión $TAG ya está publicada. Incrementa versionCode y versionName antes de publicar otra." >&2
             exit 1
           fi
-          gh release create "$TAG" "$RUNNER_TEMP/tabnall-control.apk#tabnall-control.apk" --title "TABNALL CONTROL $VERSION" --notes "Actualización oficial de TABNALL CONTROL para Android. Instala sobre la versión anterior sin desinstalar. Conserva la firma privada de producción." --latest
+          sha256sum "$RUNNER_TEMP/tabnall-control.apk" | sed 's| .*/|  |' > "$RUNNER_TEMP/tabnall-control.apk.sha256"
+          gh release create "$TAG" "$RUNNER_TEMP/tabnall-control.apk#tabnall-control.apk" "$RUNNER_TEMP/tabnall-control.apk.sha256#tabnall-control.apk.sha256" --title "TABNALL CONTROL $VERSION" --notes "Novedades: comprobación periódica de actualizaciones, historial de cambios, recordatorio de respaldo y verificación de la firma y versión de la APK antes de instalar. Actualiza sin desinstalar. Verifica tus datos y realiza un respaldo JSON desde Reportes y respaldo." --latest
