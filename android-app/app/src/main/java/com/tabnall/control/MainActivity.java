@@ -33,6 +33,9 @@ import android.net.http.SslError;
 import android.webkit.ValueCallback;
 import android.view.View;
 import android.widget.Toast;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.view.Gravity;
 import android.webkit.WebResourceError;
 
 public class MainActivity extends Activity {
@@ -58,7 +61,17 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         web = new WebView(this);
-        setContentView(web);
+        FrameLayout root = new FrameLayout(this);
+        root.addView(web, new FrameLayout.LayoutParams(-1, -1));
+        Button updateButton = new Button(this);
+        updateButton.setText("Buscar actualizaciones");
+        updateButton.setTextSize(11);
+        updateButton.setAllCaps(false);
+        FrameLayout.LayoutParams updateParams = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.END);
+        updateParams.setMargins(8, 8, 12, 12);
+        root.addView(updateButton, updateParams);
+        updateButton.setOnClickListener(v -> checkForUpdates(true));
+        setContentView(root);
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -90,9 +103,9 @@ public class MainActivity extends Activity {
         });
         if (state == null) web.loadUrl(HOME); else web.restoreState(state);
         registerReceiver(updateReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
-        checkForUpdates();
+        checkForUpdates(false);
     }
-    private void checkForUpdates() {
+    private void checkForUpdates(boolean manual) {
         new Thread(() -> {
             HttpURLConnection connection = null;
             try {
@@ -100,7 +113,7 @@ public class MainActivity extends Activity {
                 connection.setRequestProperty("Accept", "application/vnd.github+json");
                 connection.setConnectTimeout(10000);
                 connection.setReadTimeout(10000);
-                if (connection.getResponseCode() != 200) return;
+                if (connection.getResponseCode() != 200) { if (manual) showUpdateStatus("No se pudo consultar GitHub. Intenta de nuevo."); return; }
                 ByteArrayOutputStream bytes = new ByteArrayOutputStream();
                 try (InputStream in = connection.getInputStream()) {
                     byte[] buf = new byte[4096]; int n;
@@ -108,17 +121,17 @@ public class MainActivity extends Activity {
                 }
                 JSONObject release = new JSONObject(bytes.toString("UTF-8"));
                 String tag = release.optString("tag_name", "");
-                if (!tag.startsWith("tabnall-control-v")) return;
+                if (!tag.startsWith("tabnall-control-v")) { if (manual) showUpdateStatus("No se encontró una actualización compatible."); return; }
                 String version = tag.substring("tabnall-control-v".length());
-                if (!isNewer(version, getPackageManager().getPackageInfo(getPackageName(), 0).versionName)) return;
+                if (!isNewer(version, getPackageManager().getPackageInfo(getPackageName(), 0).versionName)) { if (manual) showUpdateStatus("Ya tienes la versión más reciente (" + version + ")."); return; }
                 JSONArray assets = release.optJSONArray("assets");
-                if (assets == null) return;
+                if (assets == null) { if (manual) showUpdateStatus("La actualización no tiene APK disponible."); return; }
                 String url = null;
                 for (int i = 0; i < assets.length(); i++) {
                     JSONObject asset = assets.getJSONObject(i);
                     if ("tabnall-control.apk".equals(asset.optString("name"))) { url = asset.optString("browser_download_url"); break; }
                 }
-                if (url == null || !url.startsWith("https://github.com/ronalarcos1-ui/tabnall-tienda/releases/download/")) return;
+                if (url == null || !url.startsWith("https://github.com/ronalarcos1-ui/tabnall-tienda/releases/download/")) { if (manual) showUpdateStatus("No se encontró un APK oficial para actualizar."); return; }
                 final String downloadUrl = url;
                 runOnUiThread(() -> {
                     if (isFinishing() || isDestroyed()) return;
@@ -127,9 +140,13 @@ public class MainActivity extends Activity {
                         .setNegativeButton("Después", null)
                         .setPositiveButton("Actualizar", (d, w) -> downloadUpdate(downloadUrl)).show();
                 });
-            } catch (Exception ignored) { /* Sin conexión: la aplicación sigue funcionando. */ }
+            } catch (Exception ignored) { if (manual) showUpdateStatus("No fue posible comprobar actualizaciones. Revisa tu conexión."); }
             finally { if (connection != null) connection.disconnect(); }
         }).start();
+    }
+
+    private void showUpdateStatus(String message) {
+        runOnUiThread(() -> { if (!isFinishing() && !isDestroyed()) new AlertDialog.Builder(this).setTitle("Actualizaciones TABNALL").setMessage(message).setPositiveButton("Entendido", null).show(); });
     }
 
     private boolean isNewer(String remote, String installed) {
