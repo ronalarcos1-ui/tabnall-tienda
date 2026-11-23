@@ -14,12 +14,12 @@ android {
         release {
             def keyFile = System.getenv('TABNALL_KEYSTORE_PATH')
             def storePass = System.getenv('TABNALL_KEYSTORE_PASSWORD')
-            def keyAlias = System.getenv('TABNALL_KEY_ALIAS')
+            def aliasValue = System.getenv('TABNALL_KEY_ALIAS')
             def keyPass = System.getenv('TABNALL_KEY_PASSWORD')
-            if (keyFile && storePass && keyAlias && keyPass) {
+            if (keyFile && storePass && aliasValue && keyPass) {
                 storeFile file(keyFile)
                 storePassword storePass
-                keyAlias keyAlias
+                keyAlias aliasValue
                 keyPassword keyPass
             }
         }
