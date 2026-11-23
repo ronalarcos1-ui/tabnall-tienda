@@ -233,10 +233,27 @@ function renderProDashboard(){
  for(const message of [low.length?low.length+' producto(s) con existencias bajas: '+low.slice(0,4).map(x=>x.name).join(', '):'Inventario dentro del límite configurado',debt>0?'Cuentas pendientes estimadas: '+money(debt):'Sin cuentas pendientes detectadas',syncMeta?.pending?'Cambios pendientes de sincronización con Supabase':'Revisa el estado de sincronización antes de cerrar']){const p=document.createElement('p');p.textContent=message;alerts.append(p)}
 }
 $('lowStockThreshold').addEventListener('change',()=>{localStorage.setItem(proStockKey(),$('lowStockThreshold').value);renderProDashboard()});
+function proNotificationSupport(){
+ const button=$('proNotifications');
+ if(!('Notification' in window)||!window.isSecureContext){
+  button.textContent='Avisos internos activos';
+  button.disabled=true;
+  button.title='Las alertas de inventario y cobros se muestran en el Centro de alertas. Este navegador no admite notificaciones del sistema.';
+  return;
+ }
+ button.disabled=false;
+ button.textContent=Notification.permission==='granted'?'Permiso de avisos concedido':'Activar avisos del navegador';
+}
 $('proNotifications').onclick=async()=>{
- if(!('Notification' in window))return alert('Este dispositivo no permite notificaciones web.');
- try{const result=await Notification.requestPermission();alert(result==='granted'?'Permiso concedido. Los avisos se consultan al abrir la aplicación.':'Permiso no concedido. Seguirás viendo las alertas dentro de la aplicación.')}catch(e){alert('No se pudo solicitar el permiso. Usa el centro de alertas.')}
+ if(!('Notification' in window)||!window.isSecureContext){proNotificationSupport();return}
+ try{
+  const result=await Notification.requestPermission();
+  proNotificationSupport();
+  if(result==='granted')alert('Permiso concedido. El Centro de alertas sigue disponible dentro de la aplicación. Las notificaciones automáticas con la app cerrada aún no están implementadas.');
+  else alert('No se concedió permiso. El Centro de alertas seguirá funcionando dentro de la aplicación.');
+ }catch(e){proNotificationSupport()}
 };
+proNotificationSupport();
 function proSecurityStatus(){
  const status=$('proSecurityStatus');
  if(!cloudUser){status.textContent='Inicia sesión para revisar la seguridad.';return}
