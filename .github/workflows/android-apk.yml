@@ -7,13 +7,18 @@ on:
         required: false
         type: boolean
         default: false
+      publish_release:
+        description: 'Publicar APK firmada en GitHub Releases para actualizaciones internas'
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
       - 'android-app/**'
       - '.github/workflows/android-apk.yml'
 permissions:
-  contents: read
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -69,3 +74,19 @@ jobs:
           name: TABNALL-CONTROL-Android-APK
           path: android-app/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+      - name: Publicar actualización en GitHub Releases
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release == true && inputs.publish_release == true }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION=$(sed -n "s/.*versionName '\\([^']*\\)'.*/\\1/p" android-app/app/build.gradle | head -1)
+          test -n "$VERSION"
+          TAG="tabnall-control-v$VERSION"
+          cp android-app/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/tabnall-control.apk"
+          test "$(stat -c %s "$RUNNER_TEMP/tabnall-control.apk")" -gt 10000
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "La versión $TAG ya está publicada. Incrementa versionCode y versionName antes de publicar otra." >&2
+            exit 1
+          fi
+          gh release create "$TAG" "$RUNNER_TEMP/tabnall-control.apk#tabnall-control.apk" --title "TABNALL CONTROL $VERSION" --notes "Actualización oficial de TABNALL CONTROL para Android. Instala sobre la versión anterior sin desinstalar. Conserva la firma privada de producción." --latest
