@@ -43,7 +43,7 @@ import android.view.Gravity;
 import android.webkit.WebResourceError;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://ronalarcos1-ui.github.io/tabnall-tienda/control/";
+    private static final String HOME = "https://ronalarcos1-ui.github.io/tabnall-tienda/control/?app=1.0.9";
     private WebView web;
     private long updateDownloadId = -1;
     private long lastAutomaticCheck = 0L;
@@ -82,6 +82,8 @@ public class MainActivity extends Activity {
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
+        // Revalidate HTML on each visit without deleting cookies or localStorage.
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
@@ -108,7 +110,8 @@ public class MainActivity extends Activity {
                 catch (Exception ex) { fileCallback.onReceiveValue(null); fileCallback = null; return true; }
             }
         });
-        if (state == null) web.loadUrl(HOME); else web.restoreState(state);
+        // Always request the current hosted interface after an APK update; retain account storage.
+        web.loadUrl(HOME);
         registerReceiver(updateReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
         lastAutomaticCheck = System.currentTimeMillis();
         checkForUpdates(false);
