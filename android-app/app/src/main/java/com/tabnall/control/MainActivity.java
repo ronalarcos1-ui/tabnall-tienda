@@ -14,6 +14,8 @@ import android.webkit.SslErrorHandler;
 import android.net.http.SslError;
 import android.webkit.ValueCallback;
 import android.view.View;
+import android.widget.Toast;
+import android.webkit.WebResourceError;
 
 public class MainActivity extends Activity {
     private static final String HOME = "https://ronalarcos1-ui.github.io/tabnall-tienda/control/";
@@ -36,18 +38,22 @@ public class MainActivity extends Activity {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 String host = uri.getHost();
-                if ("https".equals(uri.getScheme()) && ("ronalarcos1-ui.github.io".equals(host) || "gzunmqxvalyiciedcxdp.supabase.co".equals(host))) return false;
+                if ("https".equalsIgnoreCase(uri.getScheme()) && "ronalarcos1-ui.github.io".equalsIgnoreCase(host) && uri.getPath() != null && uri.getPath().startsWith("/tabnall-tienda/control/")) return false;
+                if ("https".equalsIgnoreCase(uri.getScheme()) && "gzunmqxvalyiciedcxdp.supabase.co".equalsIgnoreCase(host)) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (Exception ignored) {}
                 return true;
             }
             @Override public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) { handler.cancel(); }
+            @Override public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request.isForMainFrame()) Toast.makeText(MainActivity.this, "No se pudo conectar. Revisa internet e intenta de nuevo.", Toast.LENGTH_LONG).show();
+            }
         });
         web.setWebChromeClient(new WebChromeClient() {
             @Override public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
                 if (fileCallback != null) fileCallback.onReceiveValue(null);
                 fileCallback = callback;
                 try { startActivityForResult(params.createIntent(), FILE_REQUEST); return true; }
-                catch (Exception ex) { fileCallback = null; return false; }
+                catch (Exception ex) { fileCallback.onReceiveValue(null); fileCallback = null; return true; }
             }
         });
         if (state == null) web.loadUrl(HOME); else web.restoreState(state);
@@ -61,5 +67,9 @@ public class MainActivity extends Activity {
     }
     @Override protected void onSaveInstanceState(Bundle out) { web.saveState(out); super.onSaveInstanceState(out); }
     @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
-    @Override protected void onDestroy() { web.destroy(); super.onDestroy(); }
+    @Override protected void onDestroy() {
+        if (fileCallback != null) { fileCallback.onReceiveValue(null); fileCallback = null; }
+        web.destroy();
+        super.onDestroy();
+    }
 }
