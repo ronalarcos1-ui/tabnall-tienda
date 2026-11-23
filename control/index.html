@@ -605,5 +605,38 @@ $('backup').onclick=()=>download('TABNALL_CONTROL_respaldo_'+date()+'.json',JSON
 $('restore').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!Array.isArray(x.products)||!Array.isArray(x.sales)||!Array.isArray(x.expenses))throw Error('Formato inválido');if(!confirm('¿Reemplazar todos los registros locales por el respaldo?'))return;state=x;save();notice('Respaldo restaurado')}catch(err){alert('No se pudo importar: '+err.message)}finally{e.target.value=''}};
 $('csv').onclick=()=>{const m=$('month').value,rows=[['tipo','fecha','concepto','cantidad','precio_unitario','costo_unitario','total']];for(const s of state.sales.filter(x=>x.date.startsWith(m)))rows.push(['venta',s.date,s.name,s.qty,s.price,s.cost,s.qty*s.price]);for(const e of state.expenses.filter(x=>x.date.startsWith(m)))rows.push(['gasto',e.date,e.name,1,e.amount,0,e.amount]);const esc=x=>'"'+String(x??'').replaceAll('"','""')+'"';download('TABNALL_CONTROL_'+m+'.csv','\uFEFF'+rows.map(r=>r.map(esc).join(',')).join('\r\n'),'text/csv;charset=utf-8')};
 $('sdate').value=date();$('edate').value=date();$('cashDate').value=date();$('closingDate').value=date();$('month').value=date().slice(0,7);$('month').onchange=monthReport;updateModeUI();render();
+// Version check: never reload without the user's explicit action.
+const TABNALL_WEB_VERSION='2026.11.23.1';
+const updateBanner=document.createElement('aside');
+updateBanner.id='tabnallUpdateBanner';
+updateBanner.setAttribute('role','status');
+updateBanner.hidden=true;
+updateBanner.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;max-width:540px;margin:auto;padding:14px;background:#182334;color:#fff;border:1px solid #edcb84;border-radius:12px;z-index:9999;box-shadow:0 8px 24px #0009';
+const updateLabel=document.createElement('span');
+updateLabel.textContent='Hay una nueva versión de TABNALL CONTROL disponible. ';
+const updateButton=document.createElement('button');
+updateButton.type='button';
+updateButton.textContent='Actualizar ahora';
+updateButton.onclick=()=>{
+ if(cloudDirty||syncPending){alert('Hay cambios pendientes de sincronización. Comprueba el respaldo y la nube antes de actualizar.');return}
+ if(document.querySelector('form:focus-within')&&!confirm('¿Actualizar ahora? Se perderán los campos de formularios que no hayas guardado.'))return;
+ location.reload();
+};
+const updateLater=document.createElement('button');
+updateLater.type='button';
+updateLater.textContent='Más tarde';
+updateLater.onclick=()=>{updateBanner.hidden=true};
+updateBanner.append(updateLabel,updateButton,updateLater);
+document.body.append(updateBanner);
+async function checkTabnallUpdate(){
+ try{
+  const res=await fetch('./version.json?t='+Date.now(),{cache:'no-store'});
+  if(!res.ok)return;
+  const info=await res.json();
+  if(typeof info.version==='string'&&info.version!==TABNALL_WEB_VERSION)updateBanner.hidden=false;
+ }catch(err){console.warn('No se pudo comprobar la versión',err)}
+}
+window.addEventListener('load',()=>void checkTabnallUpdate());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)void checkTabnallUpdate()});
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Instalación PWA no disponible',err)))}
 </script></body></html>
