@@ -7,6 +7,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageInfo;
+import android.content.pm.Signature;
+import java.security.MessageDigest;
+import java.util.Arrays;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
@@ -42,6 +46,7 @@ public class MainActivity extends Activity {
     private static final String HOME = "https://ronalarcos1-ui.github.io/tabnall-tienda/control/";
     private WebView web;
     private long updateDownloadId = -1;
+    private long lastAutomaticCheck = 0L;
     private File updateFile;
     private final BroadcastReceiver updateReceiver = new BroadcastReceiver() {
         @Override public void onReceive(Context context, Intent intent) {
@@ -71,6 +76,7 @@ public class MainActivity extends Activity {
         updateParams.setMargins(8, 8, 12, 12);
         root.addView(updateButton, updateParams);
         updateButton.setOnClickListener(v -> checkForUpdates(true));
+        updateButton.setOnLongClickListener(v -> { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ronalarcos1-ui/tabnall-tienda/releases"))); return true; });
         setContentView(root);
         WebSettings settings = web.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -103,6 +109,7 @@ public class MainActivity extends Activity {
         });
         if (state == null) web.loadUrl(HOME); else web.restoreState(state);
         registerReceiver(updateReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        lastAutomaticCheck = System.currentTimeMillis();
         checkForUpdates(false);
     }
     private void checkForUpdates(boolean manual) {
@@ -123,6 +130,9 @@ public class MainActivity extends Activity {
                 String tag = release.optString("tag_name", "");
                 if (!tag.startsWith("tabnall-control-v")) { if (manual) showUpdateStatus("No se encontró una actualización compatible."); return; }
                 String version = tag.substring("tabnall-control-v".length());
+                String releaseNotes = release.optString("body", "Mejoras y correcciones.");
+                if (releaseNotes.length() > 800) releaseNotes = releaseNotes.substring(0, 800) + "…";
+                final String notes = releaseNotes;
                 if (!isNewer(version, getPackageManager().getPackageInfo(getPackageName(), 0).versionName)) { if (manual) showUpdateStatus("Ya tienes la versión más reciente (" + version + ")."); return; }
                 JSONArray assets = release.optJSONArray("assets");
                 if (assets == null) { if (manual) showUpdateStatus("La actualización no tiene APK disponible."); return; }
@@ -136,7 +146,7 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     if (isFinishing() || isDestroyed()) return;
                     new AlertDialog.Builder(this).setTitle("Actualización disponible")
-                        .setMessage("TABNALL CONTROL " + version + " está disponible. ¿Descargar e instalar ahora? Tus datos no se eliminarán.")
+                        .setMessage("TABNALL CONTROL " + version + " está disponible.\n\nNovedades:\n" + notes + "\n\nAntes de instalar, comprueba que tus datos estén sincronizados y guarda un respaldo JSON desde Reportes y respaldo.")
                         .setNegativeButton("Después", null)
                         .setPositiveButton("Actualizar", (d, w) -> downloadUpdate(downloadUrl)).show();
                 });
@@ -181,6 +191,12 @@ public class MainActivity extends Activity {
             if (updateFile == null || !updateFile.isFile() || updateFile.length() < 10000) {
                 Toast.makeText(this, "Archivo de actualización inválido", Toast.LENGTH_LONG).show(); return;
             }
+            if (!verifyUpdateSignature(updateFile)) {
+                Toast.makeText(this, "Actualización rechazada: firma o paquete no coincide", Toast.LENGTH_LONG).show();
+                updateFile.delete();
+                updateDownloadId = -1;
+                return;
+            }
             if (Build.VERSION.SDK_INT >= 26 && !getPackageManager().canRequestPackageInstalls()) {
                 new AlertDialog.Builder(this).setTitle("Permitir actualización")
                     .setMessage("Android necesita autorización para instalar la actualización desde TABNALL CONTROL. Autorízala y vuelve a abrir la aplicación para instalar la versión nueva.")
@@ -196,6 +212,29 @@ public class MainActivity extends Activity {
         } catch (Exception e) { Toast.makeText(this, "No se pudo abrir el instalador", Toast.LENGTH_LONG).show(); }
     }
 
+    private boolean verifyUpdateSignature(File apk) {
+        try {
+            int flags = Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+            PackageInfo candidate = getPackageManager().getPackageArchiveInfo(apk.getAbsolutePath(), flags);
+            PackageInfo installed = getPackageManager().getPackageInfo(getPackageName(), flags);
+            if (candidate == null || installed == null || !getPackageName().equals(candidate.packageName)) return false;
+            if (candidate.versionCode <= installed.versionCode) return false;
+            Signature[] a = Build.VERSION.SDK_INT >= 28 ? candidate.signingInfo.getApkContentsSigners() : candidate.signatures;
+            Signature[] b = Build.VERSION.SDK_INT >= 28 ? installed.signingInfo.getApkContentsSigners() : installed.signatures;
+            if (a == null || b == null || a.length != b.length || a.length == 0) return false;
+            byte[][] first = new byte[a.length][];
+            byte[][] second = new byte[b.length][];
+            for (int i = 0; i < a.length; i++) first[i] = MessageDigest.getInstance("SHA-256").digest(a[i].toByteArray());
+            for (int i = 0; i < b.length; i++) second[i] = MessageDigest.getInstance("SHA-256").digest(b[i].toByteArray());
+            for (byte[] x : first) {
+                boolean found = false;
+                for (byte[] y : second) if (MessageDigest.isEqual(x, y)) { found = true; break; }
+                if (!found) return false;
+            }
+            return true;
+        } catch (Exception e) { return false; }
+    }
+
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == FILE_REQUEST && fileCallback != null) {
@@ -203,7 +242,7 @@ public class MainActivity extends Activity {
             fileCallback = null;
         }
     }
-    @Override protected void onResume() { super.onResume(); if (updateDownloadId != -1 && updateFile != null && updateFile.isFile() && updateFile.length() > 10000 && (Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls())) { updateDownloadId = -1; installUpdate(); } }
+    @Override protected void onResume() { super.onResume(); if (lastAutomaticCheck > 0 && System.currentTimeMillis() - lastAutomaticCheck > 6L * 60 * 60 * 1000) { lastAutomaticCheck = System.currentTimeMillis(); checkForUpdates(false); } if (updateDownloadId != -1 && updateFile != null && updateFile.isFile() && updateFile.length() > 10000 && (Build.VERSION.SDK_INT < 26 || getPackageManager().canRequestPackageInstalls())) { updateDownloadId = -1; installUpdate(); } }
     @Override protected void onSaveInstanceState(Bundle out) { web.saveState(out); super.onSaveInstanceState(out); }
     @Override public void onBackPressed() { if (web.canGoBack()) web.goBack(); else super.onBackPressed(); }
     @Override protected void onDestroy() {
