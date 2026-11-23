@@ -43,7 +43,7 @@ import android.view.Gravity;
 import android.webkit.WebResourceError;
 
 public class MainActivity extends Activity {
-    private static final String HOME = "https://ronalarcos1-ui.github.io/tabnall-tienda/control/?app=1.1.2";
+    private static final String HOME = "https://ronalarcos1-ui.github.io/tabnall-tienda/control/?app=1.1.3";
     private WebView web;
     private long updateDownloadId = -1;
     private long lastAutomaticCheck = 0L;
