@@ -7,8 +7,8 @@
   "start_url": "/tabnall-tienda/control/",
   "scope": "/tabnall-tienda/control/",
   "display": "standalone",
-  "background_color": "#111827",
-  "theme_color": "#182334",
+  "background_color": "#080808",
+  "theme_color": "#080808",
   "icons": [
     {
       "src": "./icon.svg",
