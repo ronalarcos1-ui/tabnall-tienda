@@ -75,7 +75,8 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams updateParams = new FrameLayout.LayoutParams(-2, -2, Gravity.BOTTOM | Gravity.END);
         updateParams.setMargins(8, 8, 12, 12);
         root.addView(updateButton, updateParams);
-        updateButton.setOnClickListener(v -> checkForUpdates(true));
+        updateButton.setText("Actualizaciones");
+        updateButton.setOnClickListener(v -> showUpdateCenter());
         updateButton.setOnLongClickListener(v -> { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ronalarcos1-ui/tabnall-tienda/releases"))); return true; });
         setContentView(root);
         WebSettings settings = web.getSettings();
@@ -112,6 +113,22 @@ public class MainActivity extends Activity {
         lastAutomaticCheck = System.currentTimeMillis();
         checkForUpdates(false);
     }
+    private void showUpdateCenter() {
+        String installed = "desconocida";
+        try { installed = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; }
+        catch (Exception ignored) {}
+        final String version = installed;
+        new AlertDialog.Builder(this)
+            .setTitle("Centro de actualizaciones")
+            .setMessage("TABNALL CONTROL v" + version + "\\n\\nBusca actualizaciones oficiales, consulta las novedades o abre Reportes y respaldo para proteger tus datos.")
+            .setPositiveButton("Buscar actualización", (d, w) -> checkForUpdates(true))
+            .setNeutralButton("Historial", (d, w) -> {
+                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/ronalarcos1-ui/tabnall-tienda/releases"))); }
+                catch (Exception e) { showUpdateStatus("No se pudo abrir el historial."); }
+            })
+            .setNegativeButton("Cerrar", null).show();
+    }
+
     private void checkForUpdates(boolean manual) {
         new Thread(() -> {
             HttpURLConnection connection = null;
