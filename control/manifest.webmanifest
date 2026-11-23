@@ -1,8 +1,8 @@
 {
   "id": "/tabnall-tienda/control/",
-  "name": "TABNALL CONTROL PRO",
+  "name": "TABNALL CONTROL",
   "short_name": "TABNALL",
-  "description": "Control privado de ventas, inventario y finanzas",
+  "description": "Administración privada TABNALL: ventas, inventario, clientes y reportes",
   "lang": "es-CO",
   "start_url": "/tabnall-tienda/control/",
   "scope": "/tabnall-tienda/control/",
@@ -16,5 +16,9 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
   ]
 }
